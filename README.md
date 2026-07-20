@@ -16,3 +16,6 @@ Example:
 This produces an output file at the same location as the input .metro file, named `<new city code>_<path to input .metro file>`:
 
     PR_sju14_24a156bcb1a542b484dd539ba14227c7.metro
+
+## Credit
+This code heavily follows [ejfox's metro-savefile-doctor](https://github.com/ejfox/metro-savefile-doctor) to handle the file formatting.  A big thank you to EJ for making that code public!
