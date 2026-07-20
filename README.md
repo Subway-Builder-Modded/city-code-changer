@@ -17,5 +17,8 @@ This produces an output file at the same location as the input .metro file, name
 
     PR_sju14_24a156bcb1a542b484dd539ba14227c7.metro
 
+## Setting up a Python environment
+I'm being lazy and not providing a unique environment for this script.  The packages are readily available and versions shouldn't matter.  You can use [Depot's environment file](https://github.com/Subway-Builder-Modded/depot/blob/main/environment.yml) if you want; see installation instructions in the [Depot readme](https://github.com/Subway-Builder-Modded/depot).
+
 ## Credit
 This code heavily follows [ejfox's metro-savefile-doctor](https://github.com/ejfox/metro-savefile-doctor) to handle the file formatting.  A big thank you to EJ for making that code public!
