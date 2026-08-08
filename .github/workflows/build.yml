@@ -1,0 +1,150 @@
+name: Build with Nuitka
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions: 
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, macos-15-intel, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.9"
+
+      - name: Install Nuitka
+        run: |
+          pip install nuitka
+
+      # ---------------------
+      # OS-SPECIFIC COMPILERS
+      # ---------------------
+
+      - name: Install compiler on Linux
+        if: matrix.os == 'ubuntu-24.04' || matrix.os == 'ubuntu-24.04-arm'
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential python3-dev
+
+      - name: Install compiler on Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          pip install ordered-set zstandard
+          # Nuitka will auto-install MSVC Build Tools if missing
+
+      - name: Install compiler on macOS
+        if: matrix.os == 'macos-15' || matrix.os == 'macos-15-intel'
+        run: |
+          brew update
+          brew install llvm
+
+      # ----------------
+      # BUILD EXECUTABLE
+      # ----------------
+
+      - name: Build executable with Nuitka
+        run: |
+          python -m nuitka --onefile --standalone --assume-yes-for-downloads --follow-imports change_city_code.py
+
+      # ----------------------------
+      # SET EXECUTABLE SUFFIX PER OS
+      # ----------------------------
+
+      - name: Map OS name to output suffix
+        id: osmap
+        shell: bash
+        run: |
+          case "${{ matrix.os }}" in
+            ubuntu-24.04)
+              echo "OS_SUFFIX=linux_x86-64" >> $GITHUB_ENV
+              ;;
+            ubuntu-24.04-arm)
+              echo "OS_SUFFIX=linux_arm" >> $GITHUB_ENV
+              ;;
+            macos-15)
+              echo "OS_SUFFIX=macos_arm" >> $GITHUB_ENV
+              ;;
+            macos-15-intel)
+              echo "OS_SUFFIX=macos_intel_x86-64" >> $GITHUB_ENV
+              ;;
+            windows-latest)
+              echo "OS_SUFFIX=windows_x86-64" >> $GITHUB_ENV
+              ;;
+            *)
+              # fallback to the raw matrix value
+              echo "OS_SUFFIX=${{ matrix.os }}" >> $GITHUB_ENV
+              ;;
+          esac
+
+
+      # -------------------------
+      # RENAME OUTPUT BASED ON OS
+      # -------------------------
+      
+      - name: Rename executable
+        shell: bash
+        run: |
+          # Find the Nuitka output file (with or without extension)
+          FILE=$(find . -maxdepth 1 -type f -name "change_city_code*" ! -name "*.py" -print -quit)
+          BASENAME=$(basename "$FILE")
+          echo "Found file: $BASENAME"
+      
+          # Extract extension using sed:
+          # - If a dot exists, EXT becomes the part after the dot
+          # - If no dot exists, EXT becomes empty
+          EXT=$(echo "$BASENAME" | sed -n 's/^[^.]*\.//p')
+      
+          # Build new name:
+          # - If EXT is non-empty, append ".EXT"
+          # - If EXT is empty, append nothing
+          NEW_NAME="change_city_code_${OS_SUFFIX}${EXT:+.$EXT}"
+      
+          mv "$FILE" "$NEW_NAME"
+          echo "Renamed $FILE -> $NEW_NAME"
+          echo "FINAL_EXECUTABLE=$NEW_NAME" >> $GITHUB_ENV
+
+
+      # ---------------
+      # UPLOAD ARTIFACT
+      # ---------------
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: change_city_code_${{ matrix.os }}
+          path: ${{ env.FINAL_EXECUTABLE }}
+          if-no-files-found: error
+
+  # -------
+  # RELEASE
+  # -------
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/change_city_code_*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
