@@ -18,9 +18,11 @@ This produces an output file at the same location as the input .metro file, name
     PR_sju14_24a156bcb1a542b484dd539ba14227c7.metro
 
 You can also use the pre-compiled executables available under Releases.  These are used exactly the same as the `change_city_code.py` file, e.g.,
+
     ./change_city_code_linux_x86-64.bin sju14_24a156bcb1a542b484dd539ba14227c7.metro PR
 
 Before running it, make sure that you make the file executable:
+
     chmod +x change_city_code_linux_x86-64.bin
 
 You need to run this in a terminal/shell.  Exact instructions will depend on your operating system, so if you're not sure how to do it, ask AI.
