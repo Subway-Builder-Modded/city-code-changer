@@ -275,11 +275,10 @@ if __name__ == '__main__':
     data['name'] = f"{new_city_code}_{data['name']}"
     
     updated_data = serialize_metro_save(data)
-    if os.sep in fmetro:
-        fout = os.path.join(os.path.dirname(fmetro), f"{new_city_code}_{fmetro}")
-    else:
-        fout = f"{new_city_code}_{fmetro}"
-    
-    with open(os.path.join(fout), 'wb') as f:
-        f.write(updated_data)
 
+    parent = os.path.dirname(fmetro) # Returns empty string when fmetro is a bare filename
+    fname_out = f"{new_city_code}_{os.path.basename(fmetro)}"
+    fout = os.path.join(parent, fname_out) if parent else fname_out
+    
+    with open(fout, 'wb') as f:
+        f.write(updated_data)
